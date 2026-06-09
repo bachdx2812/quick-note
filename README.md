@@ -62,6 +62,18 @@ bun run tauri build
 Releases are built as a **universal** binary by GitHub Actions on tag push
 (`.github/workflows/release.yml`).
 
+## Release a new version
+
+One command bumps the version (`tauri.conf.json`, `package.json`, `Cargo.toml`,
+`Cargo.lock`), commits, tags, and pushes — CI then builds, publishes the release,
+and updates the Homebrew tap automatically:
+
+```bash
+scripts/bump.sh patch --release   # 1.0.0 -> 1.0.1, tag + push
+scripts/bump.sh minor             # bump only (commit, no release yet)
+scripts/bump.sh 2.0.0 --release   # explicit version + release
+```
+
 ## Architecture
 
 | Layer | File | Role |
