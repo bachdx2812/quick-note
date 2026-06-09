@@ -143,17 +143,55 @@ async function render(): Promise<void> {
   }
 }
 
-function autoGrow(el: HTMLTextAreaElement): void {
-  el.style.height = "auto";
-  el.style.height = `${Math.min(el.scrollHeight, 280)}px`;
+const MIN_W = 320; // floor: still fits the key-hint bar
+const MAX_W = 640; // beyond this the text wraps and height grows instead
+const PAD_X = 50; // input horizontal padding + window border
+const HINT_H = 44; // height of the key-hint bar
+const MIN_H = 96;
+const MAX_H = 360;
+
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(Math.max(n, lo), hi);
+
+let measurer: HTMLSpanElement | null = null;
+
+/** Rendered pixel width of one line, in the input's font. */
+function measureTextWidth(text: string, input: HTMLTextAreaElement): number {
+  if (!measurer) {
+    measurer = document.createElement("span");
+    measurer.style.cssText =
+      "position:absolute;visibility:hidden;white-space:pre;top:-9999px;left:-9999px;";
+    document.body.appendChild(measurer);
+  }
+  const cs = getComputedStyle(input);
+  measurer.style.fontSize = cs.fontSize;
+  measurer.style.fontFamily = cs.fontFamily;
+  measurer.style.fontWeight = cs.fontWeight;
+  measurer.style.letterSpacing = cs.letterSpacing;
+  measurer.textContent = text;
+  return measurer.getBoundingClientRect().width;
 }
 
-/** In capture view the window hugs the input height + the hint bar. */
+/** Capture window hugs the typed content: width grows with the longest line
+ *  (up to MAX_W, then wraps); height grows with the line count. */
 async function syncCaptureSize(): Promise<void> {
   const input = $<HTMLTextAreaElement>("note-input");
-  autoGrow(input);
-  const height = Math.min(Math.max(input.scrollHeight + 44, 104), 340);
-  await appWindow.setSize(new LogicalSize(WIDTH, height));
+  const text = input.value.length ? input.value : input.placeholder;
+  const widest = Math.max(
+    0,
+    ...text.split("\n").map((line) => measureTextWidth(line, input))
+  );
+  const width = Math.round(clamp(widest + PAD_X, MIN_W, MAX_W));
+
+  // Measure wrapped height at the target content width.
+  input.style.width = `${width - PAD_X}px`;
+  input.style.height = "auto";
+  const contentH = input.scrollHeight;
+  input.style.width = "";
+  input.style.height = "";
+
+  const height = Math.round(clamp(contentH + HINT_H, MIN_H, MAX_H));
+  await appWindow.setSize(new LogicalSize(width, height));
 }
 
 async function setView(view: View): Promise<void> {
