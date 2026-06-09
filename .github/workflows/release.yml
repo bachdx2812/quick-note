@@ -50,3 +50,36 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --target universal-apple-darwin
+
+      - name: Update Homebrew tap cask
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Hash the just-published universal dmg.
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" -p '*_universal.dmg' -O qm.dmg
+          SHA="$(shasum -a 256 qm.dmg | awk '{print $1}')"
+
+          # Render the cask from the repo template (url uses #{version}).
+          sed -e "s|^  version \".*\"|  version \"${VERSION}\"|" \
+              -e "s|^  sha256 \".*\"|  sha256 \"${SHA}\"|" \
+              packaging/quickmemo.rb > cask.rb
+
+          # Push to the tap repo via the write deploy key.
+          mkdir -p ~/.ssh
+          printf '%s\n' "$TAP_DEPLOY_KEY" > ~/.ssh/tap_key
+          chmod 600 ~/.ssh/tap_key
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/tap_key -o StrictHostKeyChecking=no"
+          git clone git@github.com:bachdx2812/homebrew-tap.git tap
+          mkdir -p tap/Casks
+          cp cask.rb tap/Casks/quickmemo.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/quickmemo.rb
+          git commit -m "chore: quickmemo ${VERSION}" || { echo "no changes"; exit 0; }
+          git push origin HEAD:main
