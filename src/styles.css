@@ -58,7 +58,6 @@ body {
 #capture {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 #capture[hidden] {
@@ -66,7 +65,6 @@ body {
 }
 
 #note-input {
-  flex: 1;
   display: block;
   width: 100%;
   border: none;

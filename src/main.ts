@@ -183,14 +183,15 @@ async function syncCaptureSize(): Promise<void> {
   );
   const width = Math.round(clamp(widest + PAD_X, MIN_W, MAX_W));
 
-  // Measure wrapped height at the target content width.
+  // Measure content height at the target width (textarea is content-sized now,
+  // so scrollHeight reflects the text, not a flex-stretched box).
   input.style.width = `${width - PAD_X}px`;
   input.style.height = "auto";
   const contentH = input.scrollHeight;
   input.style.width = "";
-  input.style.height = "";
 
   const height = Math.round(clamp(contentH + HINT_H, MIN_H, MAX_H));
+  input.style.height = `${height - HINT_H}px`;
   await appWindow.setSize(new LogicalSize(width, height));
 }
 
