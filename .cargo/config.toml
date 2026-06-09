@@ -1,0 +1,5 @@
+# Fetch git dependencies (tauri-nspanel) via the git CLI over HTTPS.
+# Without this, cargo's built-in fetcher can be rewritten to SSH by a global
+# `insteadOf` gitconfig rule and fail to authenticate.
+[net]
+git-fetch-with-cli = true

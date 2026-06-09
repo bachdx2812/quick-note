@@ -1,0 +1,39 @@
+name: ci
+
+# Compile check on every push / PR to main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend deps
+        run: bun install
+
+      - name: Build frontend
+        run: bun run build
+
+      - name: Check Rust
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+        run: cargo check --manifest-path src-tauri/Cargo.toml

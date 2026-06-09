@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuickMemo</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Default view: capture input + key hints -->
+      <div id="capture">
+        <textarea
+          id="note-input"
+          rows="1"
+          placeholder="Quick note…"
+          autocomplete="off"
+          spellcheck="false"
+        ></textarea>
+        <div id="hints">
+          <span><kbd>⏎</kbd> save</span>
+          <span><kbd>⇧⏎</kbd> new line</span>
+          <span><kbd>esc</kbd> close</span>
+        </div>
+      </div>
+      <div id="toast"></div>
+
+      <!-- Notes browser (opened from the tray: Show Notes) -->
+      <section id="browse" hidden>
+        <nav>
+          <button id="back-from-browse" class="icon" title="Back to input">←</button>
+          <span id="view-title">Notes</span>
+          <span class="spacer"></span>
+          <button id="toggle-archived" class="icon" title="Show archived">🗄</button>
+          <button id="open-settings" class="icon" title="Settings">⚙︎</button>
+        </nav>
+        <div id="list"></div>
+      </section>
+
+      <!-- Settings -->
+      <section id="settings" hidden>
+        <div class="settings-head">
+          <button id="close-settings" class="icon" title="Back">←</button>
+          <span>Settings</span>
+        </div>
+        <div class="setting-row">
+          <label>Global shortcut</label>
+          <button id="shortcut-btn" class="chip">⌘⇧M</button>
+        </div>
+        <div class="setting-row">
+          <label for="autostart">Launch at login</label>
+          <input id="autostart" type="checkbox" />
+        </div>
+        <p class="hint">
+          Click the shortcut, then press your combo. Open notes or settings any
+          time from the menu-bar icon.
+        </p>
+      </section>
+    </div>
+  </body>
+</html>

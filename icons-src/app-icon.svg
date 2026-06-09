@@ -1,0 +1,29 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#053b2c" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- squircle -->
+  <rect x="64" y="64" width="896" height="896" rx="224" fill="url(#bg)"/>
+  <rect x="64" y="64" width="896" height="896" rx="224" fill="url(#sheen)"/>
+
+  <g filter="url(#softShadow)">
+    <!-- note lines -->
+    <rect x="212" y="372" width="356" height="50" rx="25" fill="#ffffff"/>
+    <rect x="212" y="487" width="300" height="50" rx="25" fill="#ffffff"/>
+    <rect x="212" y="602" width="224" height="50" rx="25" fill="#ffffff"/>
+
+    <!-- lightning bolt -->
+    <path d="M753 300 L641 470 L723 470 L691 600 L831 426 L749 426 Z" fill="#ffffff"/>
+  </g>
+</svg>

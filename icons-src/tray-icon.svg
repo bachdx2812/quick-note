@@ -1,0 +1,10 @@
+<svg width="44" height="44" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monochrome template glyph (black on transparent) for the macOS menu bar.
+       Matches the app icon: decreasing note lines + a lightning bolt. -->
+  <g fill="#000000">
+    <rect x="12" y="32" width="40" height="8" rx="4"/>
+    <rect x="12" y="49" width="33" height="8" rx="4"/>
+    <rect x="12" y="66" width="24" height="8" rx="4"/>
+    <path d="M70 24 L52 56 L63 56 L58 82 L85 49 L72 49 Z"/>
+  </g>
+</svg>

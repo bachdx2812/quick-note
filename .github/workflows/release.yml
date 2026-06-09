@@ -1,0 +1,52 @@
+name: release
+
+# Build a universal macOS .app/.dmg and publish a GitHub release when a
+# version tag (vX.Y.Z) is pushed.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Rust (universal targets)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend deps
+        run: bun install
+
+      - name: Build & publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # tauri-nspanel is a git dependency; fetch via git CLI over HTTPS.
+          CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "QuickMemo ${{ github.ref_name }}"
+          releaseBody: |
+            QuickMemo — fast menu-bar note capture for macOS.
+
+            Download the `.dmg` below. On first launch, right-click the app →
+            Open (unsigned build), or install via Homebrew (see the README).
+          releaseDraft: false
+          prerelease: false
+          args: --target universal-apple-darwin
