@@ -5,7 +5,7 @@
 # For a purely local install (no release), run packaging/install-local.sh.
 cask "quickmemo" do
   version "1.0.0"
-  sha256 "REPLACE_WITH_SHA256_OF_DMG"
+  sha256 "af0f492b977e9deb61d018b46d4434abb5ccb0b8a67d04cc8bd5106e62942d3e"
 
   url "https://github.com/bachdx2812/quick-note/releases/download/v#{version}/QuickMemo_#{version}_universal.dmg"
   name "QuickMemo"
