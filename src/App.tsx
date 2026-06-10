@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -42,6 +43,7 @@ import {
   prettyShortcut,
 } from "./shortcut";
 import { evalMath, formatResult } from "./calc";
+import { convert, formatMoney, parseCurrencyQuery } from "./currency";
 
 type Mode = "capture" | "panel" | "settings";
 
@@ -78,6 +80,27 @@ function groupByDay(notes: Note[]): [number, Note[]][] {
 const applyAccent = (c: string) =>
   document.documentElement.style.setProperty("--accent", c);
 
+// Insert thousands separators into standalone 4+ digit numbers.
+// First drop existing thousands commas (digit,digit) so re-typing regroups
+// cleanly; commas followed by a space (lists) are left untouched.
+const groupNumbers = (s: string): string =>
+  s
+    .replace(/(\d),(?=\d)/g, "$1")
+    .replace(/(?<![A-Za-z.])\d{4,}(?![A-Za-z])/g, (m) =>
+      m.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    );
+
+const countDigits = (s: string): number => (s.match(/\d/g) ?? []).length;
+
+function caretIndexForDigits(s: string, n: number): number {
+  if (n <= 0) return 0;
+  let count = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] >= "0" && s[i] <= "9" && ++count === n) return i + 1;
+  }
+  return s.length;
+}
+
 export default function App() {
   const [mode, setMode] = useState<Mode>("capture");
   const [query, setQuery] = useState("");
@@ -86,12 +109,16 @@ export default function App() {
   const [showArchived, setShowArchived] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [toast, setToast] = useState("");
+  const [extra, setExtra] = useState<{ display: string; save: string } | null>(
+    null
+  );
 
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const convSeq = useRef(0);
 
   const refresh = useCallback(async () => setNotes(await listNotes()), []);
 
@@ -161,12 +188,13 @@ export default function App() {
   const save = useCallback(async () => {
     const value = query.trim();
     if (!value) return;
-    const math = evalMath(value);
-    await addNote(math === null ? value : `${value} = ${formatResult(math)}`);
+    const body = extra && extra.display !== "…" ? extra.save : value;
+    await addNote(body);
     setQuery("");
+    setExtra(null);
     flash("Saved ✓");
     void refresh();
-  }, [query, flash, refresh]);
+  }, [query, extra, flash, refresh]);
 
   const exportMd = useCallback(async () => {
     const lines: string[] = ["# QuickMemo", ""];
@@ -190,7 +218,60 @@ export default function App() {
     }
   }, [notes, flash]);
 
-  const calc = evalMath(query);
+  // Inline math / currency conversion → shown in the chip and saved with the note.
+  useEffect(() => {
+    const text = query.trim();
+    const math = evalMath(text);
+    if (math !== null) {
+      setExtra({
+        display: `= ${formatResult(math)}`,
+        save: `${text} = ${formatResult(math)}`,
+      });
+      return;
+    }
+    const cq = parseCurrencyQuery(text);
+    if (!cq) {
+      setExtra(null);
+      return;
+    }
+    const seq = ++convSeq.current;
+    setExtra({ display: "…", save: text });
+    const timer = window.setTimeout(async () => {
+      const result = await convert(cq);
+      if (seq !== convSeq.current) return;
+      if (result === null) {
+        setExtra(null);
+        return;
+      }
+      const pretty = `${formatMoney(result)} ${cq.to}`;
+      setExtra({
+        display: `= ${pretty}`,
+        save: `${cq.amount} ${cq.from} = ${pretty}`,
+      });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Live thousands separators while typing, keeping the caret stable.
+  const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const el = e.target;
+    const raw = el.value;
+    const formatted = groupNumbers(raw);
+    if (formatted === raw) {
+      setQuery(raw);
+      return;
+    }
+    const digitsBefore = countDigits(raw.slice(0, el.selectionStart ?? raw.length));
+    setQuery(formatted);
+    requestAnimationFrame(() => {
+      const pos = caretIndexForDigits(formatted, digitsBefore);
+      try {
+        el.setSelectionRange(pos, pos);
+      } catch {
+        /* ignore */
+      }
+    });
+  };
 
   return (
     <div ref={rootRef} className="relative flex flex-col gap-2.5 p-4">
@@ -207,7 +288,7 @@ export default function App() {
                 spellCheck={false}
                 style={{ caretColor: "var(--accent)" }}
                 className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[16px] leading-snug text-text outline-none placeholder:text-faint"
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={handleInput}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
@@ -218,9 +299,9 @@ export default function App() {
                   }
                 }}
               />
-              {calc !== null && (
+              {extra && (
                 <span className="shrink-0 font-semibold text-accent tabular-nums">
-                  = {formatResult(calc)}
+                  {extra.display}
                 </span>
               )}
             </div>

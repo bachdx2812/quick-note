@@ -3,7 +3,7 @@
  * Evaluates a pure arithmetic expression; returns a finite number or null.
  */
 export function evalMath(input: string): number | null {
-  const expr = input.trim();
+  const expr = input.trim().replace(/,/g, ""); // ignore thousands separators
   if (!expr) return null;
   // Require at least one operator so a bare number isn't echoed as "= n".
   if (!/[+\-*/%]/.test(expr)) return null;
@@ -20,5 +20,6 @@ export function evalMath(input: string): number | null {
 
 /** Format a computed result, trimming float noise. */
 export function formatResult(n: number): string {
-  return Number.isInteger(n) ? String(n) : String(Math.round(n * 1e6) / 1e6);
+  const rounded = Number.isInteger(n) ? n : Math.round(n * 1e6) / 1e6;
+  return rounded.toLocaleString(undefined, { maximumFractionDigits: 6 });
 }
