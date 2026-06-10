@@ -30,5 +30,6 @@ serde_json = "1"
 # spaces (Spotlight-style) and can take keyboard focus without switching Space.
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
-objc2-app-kit = { version = "0.3", features = ["NSWindow", "NSResponder", "NSView"] }
+objc2-app-kit = { version = "0.3", features = ["NSWindow", "NSResponder", "NSView", "NSColor"] }
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
+window-vibrancy = "0.5"

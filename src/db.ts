@@ -38,6 +38,10 @@ export async function setArchived(id: number, archived: boolean): Promise<void> 
   ]);
 }
 
+export async function updateNote(id: number, body: string): Promise<void> {
+  await conn().execute("UPDATE notes SET body = $1 WHERE id = $2", [body, id]);
+}
+
 export async function removeNote(id: number): Promise<void> {
   await conn().execute("DELETE FROM notes WHERE id = $1", [id]);
 }

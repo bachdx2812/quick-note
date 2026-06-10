@@ -8,7 +8,7 @@
 use std::sync::Mutex;
 use std::time::Instant;
 
-use objc2_app_kit::{NSWindowCollectionBehavior, NSWindowStyleMask};
+use objc2_app_kit::{NSColor, NSWindowCollectionBehavior, NSWindowStyleMask};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -97,6 +97,21 @@ fn set_shortcut(app: AppHandle, accelerator: String) -> Result<(), String> {
     .map_err(|err| err.to_string())
 }
 
+/// Quit the app (exposed as a command so it's reachable from the search surface).
+#[tauri::command]
+fn quit_app(app: AppHandle) {
+    app.exit(0);
+}
+
+/// Write the notes (rendered as Markdown by the frontend) to ~/Downloads.
+#[tauri::command]
+fn export_markdown(app: AppHandle, content: String) -> Result<String, String> {
+    let dir = app.path().download_dir().map_err(|e| e.to_string())?;
+    let path = dir.join("QuickMemo Notes.md");
+    std::fs::write(&path, content).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let migrations = vec![Migration {
@@ -124,7 +139,11 @@ pub fn run() {
         .manage(AppState {
             last_hidden: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![set_shortcut])
+        .invoke_handler(tauri::generate_handler![
+            set_shortcut,
+            export_markdown,
+            quit_app
+        ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
             let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -145,6 +164,16 @@ pub fn run() {
                     // so showing over another app's full-screen space does not
                     // kick the user out of that Space.
                     panel.set_style_mask(NSWindowStyleMask::NonactivatingPanel);
+                }
+
+                // Fully transparent panel so the floating pill + circle buttons
+                // sit directly on the desktop (gaps between them show through).
+                if let Ok(ns_window) = win.ns_window() {
+                    unsafe {
+                        let w: &NSWindow = &*(ns_window as *const NSWindow);
+                        w.setOpaque(false);
+                        w.setBackgroundColor(Some(&NSColor::clearColor()));
+                    }
                 }
 
                 // Popover behaviour: hide when the panel loses focus.
