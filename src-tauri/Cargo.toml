@@ -1,6 +1,6 @@
 [package]
 name = "quickmemo"
-version = "1.1.0"
+version = "1.1.1"
 description = "Fast menu-bar note capture for macOS"
 authors = ["you"]
 edition = "2021"
